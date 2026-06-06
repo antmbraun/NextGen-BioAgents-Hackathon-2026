@@ -25,6 +25,7 @@ src/fda_510k/ingestion/parsers/zip_parser.py
 src/fda_510k/knowledge/__init__.py
 src/fda_510k/knowledge/checklist.py
 src/fda_510k/knowledge/db_510k.py
+src/fda_510k/knowledge/estar_transcript.py
 src/fda_510k/llm/__init__.py
 src/fda_510k/llm/gemini_client.py
 src/fda_510k/models/__init__.py
@@ -35,6 +36,7 @@ src/fda_510k/models/predicate.py
 src/fda_510k/models/profile.py
 src/fda_510k/output/__init__.py
 src/fda_510k/output/estar_mapping.py
+src/fda_510k/output/estar_xml_export.py
 src/fda_510k/output/formatter.py
 src/fda_510k/output/submission_package.py
 src/fda_510k/tools/__init__.py
