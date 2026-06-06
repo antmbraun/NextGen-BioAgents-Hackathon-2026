@@ -56,6 +56,8 @@ class SubmissionPackage(BaseModel):
     inferred_count: int = 0
     drafted_count: int = 0
     explicit_count: int = 0
+    estar_xml: str | None = None
+    estar_xml_version: str = "nIVD_v7.0"
 
 
 class AgentOutput(BaseModel):

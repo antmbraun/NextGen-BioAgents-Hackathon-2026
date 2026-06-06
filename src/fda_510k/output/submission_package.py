@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fda_510k.knowledge.checklist import evaluate_device_conditions, load_estar_checklist
 from fda_510k.models.common import FieldProvenance
+from fda_510k.output.estar_xml_export import ESTAR_XML_VERSION, export_estar_xml
 from fda_510k.models.gap import GapSeverity
 from fda_510k.models.output import (
     AgentOutput,
@@ -85,7 +86,7 @@ def build_submission_package(output: AgentOutput) -> SubmissionPackage:
     filled = sum(1 for f in fields if f.content and f.content != "[Content pending — VERIFY]")
     readiness = filled / len(fields) if fields else 0.0
 
-    return SubmissionPackage(
+    package = SubmissionPackage(
         readiness_score=round(readiness, 3),
         fields=fields,
         review_items=review_items,
@@ -93,3 +94,11 @@ def build_submission_package(output: AgentOutput) -> SubmissionPackage:
         inferred_count=inferred_count,
         drafted_count=drafted_count,
     )
+    output_with_package = output.model_copy(update={"submission_package": package})
+    package = package.model_copy(
+        update={
+            "estar_xml": export_estar_xml(output_with_package, package),
+            "estar_xml_version": ESTAR_XML_VERSION,
+        }
+    )
+    return package

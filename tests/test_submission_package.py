@@ -33,6 +33,25 @@ def test_draft_all_sections_produces_content():
         assert "DRAFT" in d.content or "Source:" in d.content
 
 
+def test_submission_package_includes_estar_xml():
+    profile = SubmissionProfile(
+        device_trade_name=ExtractedField.from_value(
+            "GlucoTrack", confidence=0.7, provenance=FieldProvenance.INFERRED
+        ),
+        indications_for_use=ExtractedField.from_value(
+            "Continuous glucose monitoring", confidence=0.7, provenance=FieldProvenance.INFERRED
+        ),
+    )
+    gaps = run_gap_analysis(profile)
+    drafts = draft_all_estar_sections(profile, gaps)
+    output = AgentOutput(submission_profile=profile, gap_analysis=gaps, estar_drafts=drafts)
+    package = build_submission_package(output)
+    assert package.estar_xml
+    assert "<TradeName" in package.estar_xml
+    assert "GlucoTrack" in package.estar_xml
+    assert package.estar_xml_version == "nIVD_v7.0"
+
+
 def test_submission_package_readiness():
     profile = SubmissionProfile(
         device_trade_name=ExtractedField.from_value(

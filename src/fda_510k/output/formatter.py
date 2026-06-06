@@ -220,4 +220,7 @@ def save_output_json(output: AgentOutput, path: Path | None = None) -> Path:
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     out_path = path or settings.output_dir / f"{output.submission_profile.profile_id}.json"
     out_path.write_text(output.model_dump_json(indent=2))
+    if output.submission_package and output.submission_package.estar_xml:
+        xml_path = out_path.with_suffix(".estar.xml")
+        xml_path.write_text(output.submission_package.estar_xml, encoding="utf-8")
     return out_path

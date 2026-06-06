@@ -123,7 +123,7 @@ def _render_submission_package(output) -> None:
 
     _render_readiness_banner(output)
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     html_draft = format_submission_draft_html(pkg)
     json_mapping = json.dumps(build_complete_estar_mapping(output, pkg), indent=2)
 
@@ -137,6 +137,15 @@ def _render_submission_package(output) -> None:
             type="primary",
         )
     with col2:
+        st.download_button(
+            "Download eSTAR Data (XML)",
+            pkg.estar_xml or "",
+            file_name="nIVD_eSTAR_7-0_data.xml",
+            mime="application/xml",
+            use_container_width=True,
+            disabled=not pkg.estar_xml,
+        )
+    with col3:
         st.download_button(
             "Download Complete eSTAR Mapping (JSON)",
             json_mapping,
@@ -394,6 +403,13 @@ def main() -> None:
                     file_name="estar_mapping_complete.json",
                     mime="application/json",
                 )
+                if output.submission_package.estar_xml:
+                    st.download_button(
+                        "Download eSTAR Data (XML)",
+                        output.submission_package.estar_xml,
+                        file_name="nIVD_eSTAR_7-0_data.xml",
+                        mime="application/xml",
+                    )
 
     st.divider()
     st.caption("Drafting assistant only. Not legal or regulatory advice. Human review required before FDA submission.")
