@@ -7,6 +7,7 @@ src/fda_510k/agent/graph.py
 src/fda_510k/agent/state.py
 src/fda_510k/extraction/__init__.py
 src/fda_510k/extraction/profile_extractor.py
+src/fda_510k/extraction/prompts/draft_sections.py
 src/fda_510k/extraction/prompts/extraction_passes.py
 src/fda_510k/ingestion/__init__.py
 src/fda_510k/ingestion/chunker.py
@@ -25,7 +26,7 @@ src/fda_510k/knowledge/__init__.py
 src/fda_510k/knowledge/checklist.py
 src/fda_510k/knowledge/db_510k.py
 src/fda_510k/llm/__init__.py
-src/fda_510k/llm/ollama_client.py
+src/fda_510k/llm/gemini_client.py
 src/fda_510k/models/__init__.py
 src/fda_510k/models/common.py
 src/fda_510k/models/gap.py
@@ -35,9 +36,12 @@ src/fda_510k/models/profile.py
 src/fda_510k/output/__init__.py
 src/fda_510k/output/estar_mapping.py
 src/fda_510k/output/formatter.py
+src/fda_510k/output/submission_package.py
 src/fda_510k/tools/__init__.py
 src/fda_510k/tools/anticipated_fda_questions.py
+src/fda_510k/tools/draft_all_estar_sections.py
 src/fda_510k/tools/draft_estar_sections.py
+src/fda_510k/tools/enrich_profile.py
 src/fda_510k/tools/gap_analysis_estar.py
 src/fda_510k/tools/generate_se_table.py
 src/fda_510k/tools/search_510k_db.py
@@ -49,5 +53,8 @@ src/fda_510k_assistant.egg-info/requires.txt
 src/fda_510k_assistant.egg-info/top_level.txt
 tests/test_510k_search.py
 tests/test_agent.py
+tests/test_draft_sections.py
+tests/test_enrich_profile.py
 tests/test_gap_analysis.py
 tests/test_parsers.py
+tests/test_submission_package.py

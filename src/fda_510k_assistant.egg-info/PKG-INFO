@@ -4,6 +4,7 @@ Version: 0.1.0
 Summary: FDA 510(k) submission drafting assistant
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
+Requires-Dist: eval_type_backport>=0.2
 Requires-Dist: pydantic>=2.5
 Requires-Dist: pydantic-settings>=2.1
 Requires-Dist: langgraph>=0.2
@@ -30,10 +31,11 @@ Requires-Dist: pdf2image>=1.17; extra == "ocr"
 
 AI drafting assistant that helps medical device companies prepare **510(k) submissions**. Upload any materials — notes, specs, PDFs, slide decks — and receive:
 
+- **Submission Package** — complete eSTAR-structured draft (HTML + JSON) even from minimal input
 - Gap analysis mapped to eSTAR sections
 - Ranked predicate device recommendations (K-numbers + rationale)
 - Substantial equivalence comparison draft
-- eSTAR section drafts for missing content
+- Full eSTAR section drafts (LLM or template fallback)
 - Anticipated FDA reviewer questions
 
 **This is a drafting assistant only.** All outputs require human regulatory review before submission. Do not auto-submit to FDA.
@@ -44,8 +46,9 @@ AI drafting assistant that helps medical device companies prepare **510(k) submi
 
 ```bash
 cd Project_June
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
@@ -57,14 +60,16 @@ python scripts/import_510k_db.py
 
 This streams `device-510k-0001-of-0001.json` into `storage/sqlite/510k.db`.
 
-### 3. Start Ollama (optional but recommended)
+### 3. Set up Google AI Studio (recommended)
+
+Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey), then:
 
 ```bash
-ollama serve
-ollama pull qwen2.5:3b
+cp .env.example .env
+# Edit .env and set GOOGLE_API_KEY=your_key_here
 ```
 
-If Ollama is unavailable, the agent falls back to heuristic extraction.
+If no API key is set, the agent falls back to heuristic extraction and template drafting.
 
 ### 4. Launch the web UI
 
@@ -93,7 +98,9 @@ Copy `.env.example` to `.env`:
 cp .env.example .env
 ```
 
-Key settings: `OLLAMA_MODEL`, `FDA_510K_DB_PATH`, `ENABLE_OCR`.
+Key settings: `GOOGLE_API_KEY`, `GEMINI_MODEL`, `FDA_510K_DB_PATH`, `ENABLE_OCR`.
+
+For Streamlit Cloud, add `GOOGLE_API_KEY` under **App settings → Secrets**.
 
 ## Running tests
 
