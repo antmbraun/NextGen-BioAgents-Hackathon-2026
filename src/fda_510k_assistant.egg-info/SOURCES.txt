@@ -27,7 +27,7 @@ src/fda_510k/knowledge/checklist.py
 src/fda_510k/knowledge/db_510k.py
 src/fda_510k/knowledge/estar_transcript.py
 src/fda_510k/llm/__init__.py
-src/fda_510k/llm/gemini_client.py
+src/fda_510k/llm/nebius_client.py
 src/fda_510k/models/__init__.py
 src/fda_510k/models/common.py
 src/fda_510k/models/gap.py
@@ -46,6 +46,7 @@ src/fda_510k/tools/draft_estar_sections.py
 src/fda_510k/tools/enrich_profile.py
 src/fda_510k/tools/gap_analysis_estar.py
 src/fda_510k/tools/generate_se_table.py
+src/fda_510k/tools/predicate_query.py
 src/fda_510k/tools/search_510k_db.py
 src/fda_510k/tools/validate_predicate.py
 src/fda_510k_assistant.egg-info/PKG-INFO
@@ -59,4 +60,5 @@ tests/test_draft_sections.py
 tests/test_enrich_profile.py
 tests/test_gap_analysis.py
 tests/test_parsers.py
+tests/test_predicate_query.py
 tests/test_submission_package.py

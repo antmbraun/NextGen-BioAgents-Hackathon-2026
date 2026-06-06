@@ -225,6 +225,8 @@ def _render_predicates(output) -> None:
         return
     for i, pred in enumerate(output.predicate_candidates, 1):
         with st.expander(f"#{i} {pred.k_number} — {pred.device_name} (score: {pred.rank_score})"):
+            fda_url = f"https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfpmn/pmn.cfm?ID={pred.k_number}"
+            st.markdown(f"[View on FDA 510(k) Database ↗]({fda_url})")
             st.write(f"**Applicant:** {pred.applicant}")
             st.write(f"**Product code:** {pred.product_code}")
             st.write(f"**Clearance date:** {pred.decision_date}")
