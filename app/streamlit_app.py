@@ -32,6 +32,7 @@ from fda_510k.agent.graph import run_agent  # noqa: E402
 from fda_510k.config import settings  # noqa: E402
 from fda_510k.llm.gemini_client import GeminiClient  # noqa: E402
 from fda_510k.output.estar_mapping import build_complete_estar_mapping  # noqa: E402
+from fda_510k.output.estar_xml_export import attach_estar_xml, resolve_estar_xml  # noqa: E402
 from fda_510k.output.formatter import (  # noqa: E402
     format_html_report,
     format_submission_draft_html,
@@ -116,12 +117,15 @@ def _render_readiness_banner(output) -> None:
 
 
 def _render_submission_package(output) -> None:
+    output = attach_estar_xml(output)
+    st.session_state.output = output
     pkg = output.submission_package
     if not pkg:
         st.warning("Submission package not generated.")
         return
 
     _render_readiness_banner(output)
+    estar_xml = resolve_estar_xml(output, pkg)
 
     col1, col2, col3 = st.columns(3)
     html_draft = format_submission_draft_html(pkg)
@@ -139,11 +143,11 @@ def _render_submission_package(output) -> None:
     with col2:
         st.download_button(
             "Download eSTAR Data (XML)",
-            pkg.estar_xml or "",
+            estar_xml,
             file_name="nIVD_eSTAR_7-0_data.xml",
             mime="application/xml",
             use_container_width=True,
-            disabled=not pkg.estar_xml,
+            disabled=not estar_xml,
         )
     with col3:
         st.download_button(
@@ -316,7 +320,7 @@ def main() -> None:
                             file_paths=file_paths,
                             clarifications=st.session_state.clarifications,
                         )
-                        st.session_state.output = output
+                        st.session_state.output = attach_estar_xml(output)
                         st.session_state.pending_reanalyze = False
                         save_output_json(output)
                         status.update(label="Analysis complete", state="complete")
@@ -403,10 +407,11 @@ def main() -> None:
                     file_name="estar_mapping_complete.json",
                     mime="application/json",
                 )
-                if output.submission_package.estar_xml:
+                estar_xml = resolve_estar_xml(output, output.submission_package)
+                if estar_xml:
                     st.download_button(
                         "Download eSTAR Data (XML)",
-                        output.submission_package.estar_xml,
+                        estar_xml,
                         file_name="nIVD_eSTAR_7-0_data.xml",
                         mime="application/xml",
                     )

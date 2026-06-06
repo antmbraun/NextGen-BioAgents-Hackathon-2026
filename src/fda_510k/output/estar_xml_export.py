@@ -97,3 +97,37 @@ def export_estar_xml(output: AgentOutput, package: SubmissionPackage | None = No
             xml = _inject_xml_text(xml, tag, narrative)
 
     return xml
+
+
+def resolve_estar_xml(output: AgentOutput, package: SubmissionPackage | None = None) -> str:
+    """Return eSTAR XML, generating on demand for older packages missing ``estar_xml``."""
+    package = package or output.submission_package
+    if package is None:
+        return ""
+
+    existing = getattr(package, "estar_xml", None)
+    if existing:
+        return existing
+
+    return export_estar_xml(output, package)
+
+
+def attach_estar_xml(output: AgentOutput) -> AgentOutput:
+    """Ensure ``output.submission_package`` includes populated ``estar_xml``."""
+    package = output.submission_package
+    if package is None:
+        return output
+
+    if getattr(package, "estar_xml", None):
+        return output
+
+    if "estar_xml" not in package.model_fields:
+        return output
+
+    updated = package.model_copy(
+        update={
+            "estar_xml": export_estar_xml(output, package),
+            "estar_xml_version": ESTAR_XML_VERSION,
+        }
+    )
+    return output.model_copy(update={"submission_package": updated})
