@@ -3,7 +3,11 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-ESTAR_TRANSCRIPT_PATH = Path(__file__).resolve().parent / "estar_transcript_non_ivd_v3.md"
+_KNOWLEDGE_DIR = Path(__file__).resolve().parent
+_PROJECT_SRC = _KNOWLEDGE_DIR.parents[1]
+
+ESTAR_TRANSCRIPT_PATH = _KNOWLEDGE_DIR / "estar_transcript_non_ivd_v3.md"
+ESTAR_XML_TEMPLATE_PATH = _PROJECT_SRC / "nIVD_eSTAR_7-0_data.xml"
 
 FIELD_TRANSCRIPT_SECTIONS: dict[str, str] = {
     "applicant_name": "Applicant Information",
@@ -49,6 +53,10 @@ CHECKLIST_SECTION_TRANSCRIPT: dict[str, str] = {
 
 def load_estar_transcript() -> str:
     return ESTAR_TRANSCRIPT_PATH.read_text(encoding="utf-8")
+
+
+def load_estar_xml_template() -> str:
+    return ESTAR_XML_TEMPLATE_PATH.read_text(encoding="utf-8")
 
 
 @lru_cache(maxsize=1)
