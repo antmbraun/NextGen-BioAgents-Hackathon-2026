@@ -3,6 +3,7 @@ from __future__ import annotations
 from fda_510k.config import settings
 from fda_510k.extraction.prompts.draft_sections import SECTION_DRAFT_SYSTEM, SECTION_DRAFT_USER
 from fda_510k.knowledge.checklist import evaluate_device_conditions, load_estar_checklist
+from fda_510k.knowledge.estar_transcript import get_estar_guidance
 from fda_510k.llm.gemini_client import GeminiClient
 from fda_510k.models.common import ExtractedField, FieldProvenance
 from fda_510k.models.gap import GapItem
@@ -144,12 +145,17 @@ def _template_draft(
 
 def _llm_draft_field(
     llm: GeminiClient,
+    field_id: str,
     field_label: str,
     section_label: str,
     profile: SubmissionProfile,
     predicate: PredicateCandidate | None,
     known_value: str,
 ) -> str | None:
+    estar_instructions = get_estar_guidance(field_id=field_id, section_label=section_label)
+    if not estar_instructions:
+        estar_instructions = "No specific eSTAR transcript excerpt available for this field."
+
     prompt = SECTION_DRAFT_USER.format(
         field_label=field_label,
         section_label=section_label,
@@ -160,6 +166,7 @@ def _llm_draft_field(
         product_code=_field_content(profile.product_code) or "Not specified",
         predicate=f"{predicate.device_name} ({predicate.k_number})" if predicate else "Not specified",
         known_value=known_value or "None",
+        eSTAR_instructions=estar_instructions,
     )
     try:
         text = llm.generate(prompt, system=SECTION_DRAFT_SYSTEM, temperature=0.2)
@@ -198,7 +205,9 @@ def draft_all_estar_sections(
         elif known and status != "missing":
             content = known
         elif use_llm:
-            content = _llm_draft_field(llm, item.label, item.section_label, profile, predicate, known)
+            content = _llm_draft_field(
+                llm, item.id, item.label, item.section_label, profile, predicate, known
+            )
             if not content:
                 content = _template_draft(item.id, item.label, profile, predicate, se)
         else:
