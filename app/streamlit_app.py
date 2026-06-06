@@ -31,7 +31,9 @@ def _inject_streamlit_secrets() -> None:
 _inject_streamlit_secrets()
 
 from fda_510k.agent.graph import run_agent  # noqa: E402
-from fda_510k.config import settings  # noqa: E402
+from fda_510k.config import get_nebius_model, reload_settings, settings  # noqa: E402
+
+reload_settings()
 from fda_510k.llm.nebius_client import NebiusClient  # noqa: E402
 from fda_510k.output.estar_mapping import build_complete_estar_mapping  # noqa: E402
 from fda_510k.output.estar_xml_export import attach_estar_xml, resolve_estar_xml  # noqa: E402
@@ -64,7 +66,7 @@ def _system_status() -> dict:
     return {
         "llm": llm.is_available(),
         "db": settings.fda_510k_db_path.exists(),
-        "model": settings.nebius_model,
+        "model": get_nebius_model(),
     }
 
 

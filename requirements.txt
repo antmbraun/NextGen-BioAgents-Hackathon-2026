@@ -1,3 +1,4 @@
+-e .
 eval_type_backport>=0.2
 pydantic>=2.5
 pydantic-settings>=2.1

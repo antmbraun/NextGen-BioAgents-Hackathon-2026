@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from typing import Any
 
 import httpx
 
-from fda_510k.config import settings
-
-NEBIUS_DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
+from fda_510k.config import (
+    DEFAULT_NEBIUS_BASE_URL,
+    get_nebius_api_key,
+    get_nebius_base_url,
+    get_nebius_model,
+)
 
 
 class NebiusClient:
@@ -22,9 +24,9 @@ class NebiusClient:
         base_url: str | None = None,
         timeout: float = 120.0,
     ) -> None:
-        self.api_key = api_key or settings.nebius_api_key or os.environ.get("NEBIUS_API_KEY", "")
-        self.model = model or settings.nebius_model
-        self.base_url = (base_url or settings.nebius_base_url or NEBIUS_DEFAULT_BASE_URL).rstrip("/")
+        self.api_key = api_key or get_nebius_api_key()
+        self.model = model or get_nebius_model()
+        self.base_url = (base_url or get_nebius_base_url() or DEFAULT_NEBIUS_BASE_URL).rstrip("/")
         self.timeout = timeout
 
     def is_available(self) -> bool:
