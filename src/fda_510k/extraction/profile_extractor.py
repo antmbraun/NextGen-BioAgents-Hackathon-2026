@@ -13,6 +13,7 @@ from fda_510k.ingestion.pipeline import ParsedDocument
 from fda_510k.llm.gemini_client import GeminiClient
 from fda_510k.models.common import ExtractedField, FieldProvenance, SourceRef
 from fda_510k.models.profile import SubmissionProfile
+from fda_510k.tools.predicate_query import _phrase_query
 
 
 class ProfileExtractor:
@@ -108,54 +109,104 @@ class ProfileExtractor:
                             field_name,
                             self._field_from_raw(field_name, raw_field, docs),
                         )
+            if self._needs_heuristic_backfill(profile):
+                profile = self._merge_heuristic(profile, docs)
         else:
             profile = self._heuristic_extract(docs)
 
         profile.recompute_summary()
         return profile
 
+    @staticmethod
+    def _is_missing(field: ExtractedField | object) -> bool:
+        return field.provenance == FieldProvenance.MISSING or field.value is None
+
+    def _needs_heuristic_backfill(self, profile: SubmissionProfile) -> bool:
+        return all(
+            self._is_missing(getattr(profile, name))
+            for name in (
+                "device_trade_name",
+                "device_common_name",
+                "indications_for_use",
+                "product_code",
+            )
+        )
+
+    def _merge_heuristic(
+        self,
+        profile: SubmissionProfile,
+        docs: list[ParsedDocument],
+    ) -> SubmissionProfile:
+        heuristic = self._heuristic_extract(docs)
+        for field_name in SubmissionProfile.model_fields:
+            if field_name in {"profile_id", "created_at", "input_manifest", "extraction_summary"}:
+                continue
+            current = getattr(profile, field_name)
+            candidate = getattr(heuristic, field_name)
+            if self._is_missing(current) and not self._is_missing(candidate):
+                setattr(profile, field_name, candidate)
+        return profile
+
     def _heuristic_extract(self, docs: list[ParsedDocument]) -> SubmissionProfile:
-        """Fallback when Gemini is unavailable — keyword-based extraction."""
+        """Fallback when Gemini is unavailable or returns sparse fields."""
+        import re
+
         profile = SubmissionProfile()
-        full_text = "\n".join(d.raw_text for d in docs).lower()
+        full_text = "\n".join(d.raw_text for d in docs)
+        lowered = full_text.lower()
+        primary_doc = docs[0] if docs else None
+        source_ref = (
+            [SourceRef(doc_id=primary_doc.doc_id, doc_name=primary_doc.doc_name, snippet=full_text[:200])]
+            if primary_doc
+            else []
+        )
 
-        def set_if_keyword(field: str, keywords: list[str], value: str) -> None:
-            if any(kw in full_text for kw in keywords):
-                setattr(
-                    profile,
-                    field,
-                    ExtractedField.from_value(
-                        value,
-                        confidence=0.5,
-                        provenance=FieldProvenance.INFERRED,
-                        notes="Heuristic extraction (Gemini unavailable)",
-                    ),
-                )
-
-        set_if_keyword("software_present", ["software", "firmware", "app", "bluetooth"], True)
-        set_if_keyword("patient_contact", ["patient contact", "skin contact", "blood", "wound"], True)
-        set_if_keyword("electrical_powered", ["battery", "rechargeable", "usb", "powered"], True)
-
-        for doc in docs:
-            text = doc.raw_text
-            if "glucose" in text.lower():
-                profile.device_common_name = ExtractedField.from_value(
-                    "Continuous glucose monitor",
-                    confidence=0.6,
+        def set_field(field: str, value: object, *, confidence: float = 0.5, notes: str) -> None:
+            setattr(
+                profile,
+                field,
+                ExtractedField.from_value(
+                    value,
+                    confidence=confidence,
                     provenance=FieldProvenance.INFERRED,
-                    source_refs=[SourceRef(doc_id=doc.doc_id, doc_name=doc.doc_name, snippet=text[:200])],
-                )
-            if "K" in text:
-                import re
+                    source_refs=source_ref,
+                    notes=notes,
+                ),
+            )
 
-                k_nums = re.findall(r"K\d{6}", text.upper())
-                if k_nums:
-                    profile.user_predicate_mentions = ExtractedField.from_value(
-                        list(set(k_nums)),
-                        confidence=0.8,
-                        provenance=FieldProvenance.EXPLICIT,
-                        source_refs=[SourceRef(doc_id=doc.doc_id, doc_name=doc.doc_name)],
-                    )
+        device_query = _phrase_query(full_text)
+        if device_query:
+            set_field(
+                "device_common_name",
+                device_query.title(),
+                notes="Heuristic device-type extraction from input text",
+            )
+
+        first_sentence = re.split(r"[.\n]", full_text.strip(), maxsplit=1)[0].strip()
+        if len(first_sentence) >= 20:
+            set_field(
+                "indications_for_use",
+                first_sentence,
+                confidence=0.45,
+                notes="Heuristic extraction from opening sentence",
+            )
+
+        if any(kw in lowered for kw in ("software", "firmware", "app", "bluetooth", "mobile")):
+            set_field("software_present", True, notes="Heuristic extraction from software keywords")
+        if any(kw in lowered for kw in ("patient contact", "skin contact", "blood", "wound", "implant")):
+            set_field("patient_contact", True, notes="Heuristic extraction from contact keywords")
+        if any(kw in lowered for kw in ("battery", "rechargeable", "usb", "powered", "electrical")):
+            set_field("electrical_powered", True, notes="Heuristic extraction from power keywords")
+
+        k_nums = re.findall(r"K\d{6}", full_text.upper())
+        if k_nums:
+            profile.user_predicate_mentions = ExtractedField.from_value(
+                list(set(k_nums)),
+                confidence=0.8,
+                provenance=FieldProvenance.EXPLICIT,
+                source_refs=source_ref,
+                notes="Heuristic extraction of K-numbers",
+            )
 
         profile.recompute_summary()
         return profile

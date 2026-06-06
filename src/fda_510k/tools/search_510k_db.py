@@ -4,6 +4,7 @@ from fda_510k.config import settings
 from fda_510k.knowledge.db_510k import Device510kRepository
 from fda_510k.models.predicate import PredicateCandidate
 from fda_510k.models.profile import SubmissionProfile
+from fda_510k.tools.predicate_query import build_predicate_search_query
 
 
 def _build_rationale(signals: dict[str, float], rec) -> str:
@@ -37,20 +38,19 @@ def search_predicates(
     profile: SubmissionProfile,
     repo: Device510kRepository | None = None,
     top_k: int | None = None,
+    *,
+    search_context: str = "",
 ) -> list[PredicateCandidate]:
     repo = repo or Device510kRepository()
     top_k = top_k or settings.predicate_top_k
 
-    device_name = (
-        profile.device_trade_name.value
-        or profile.device_common_name.value
-        or "medical device"
+    query_text, product_code, regulation_number = build_predicate_search_query(
+        profile,
+        search_context=search_context,
     )
-    product_code = profile.product_code.value
-    regulation_number = profile.regulation_number.value
 
     ranked = repo.rank_candidates(
-        device_name=str(device_name),
+        device_name=query_text or "device",
         product_code=product_code,
         regulation_number=regulation_number,
         top_k=top_k,

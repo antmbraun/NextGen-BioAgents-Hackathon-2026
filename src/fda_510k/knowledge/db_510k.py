@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -111,7 +112,8 @@ class Device510kRepository:
             params.append(advisory_committee.upper())
 
         if query_text:
-            fts_query = " OR ".join(query_text.split())
+            terms = [term for term in re.findall(r"[A-Za-z0-9][A-Za-z0-9-]{1,}", query_text) if len(term) >= 2]
+            fts_query = " OR ".join(f'"{term}"' for term in terms[:12]) if terms else f'"{query_text}"'
             sql = """
                 SELECT d.* FROM devices_510k d
                 JOIN devices_510k_fts fts ON d.id = fts.rowid
@@ -170,6 +172,8 @@ class Device510kRepository:
             query_text=device_name,
             limit=100,
         )
+        if not records and product_code:
+            records = self.search(query_text=device_name, limit=100)
         if not records:
             records = self.search(query_text=device_name, limit=100)
 

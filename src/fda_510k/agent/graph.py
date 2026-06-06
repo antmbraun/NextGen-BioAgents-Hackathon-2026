@@ -61,10 +61,22 @@ def clarify_node(state: AgentState) -> AgentState:
     return {"status_message": "Clarification questions prepared for user"}
 
 
+def _predicate_search_context(state: AgentState) -> str:
+    parts = [state.get("user_text", "").strip()]
+    for doc in state.get("parsed_docs", []):
+        if doc.raw_text:
+            parts.append(doc.raw_text.strip())
+    return "\n".join(part for part in parts if part)
+
+
 def search_predicates_node(state: AgentState) -> AgentState:
     profile = state["profile"]
     repo = Device510kRepository()
-    candidates = search_predicates(profile, repo=repo)
+    candidates = search_predicates(
+        profile,
+        repo=repo,
+        search_context=_predicate_search_context(state),
+    )
 
     # Validate user-mentioned predicates
     mentions = profile.user_predicate_mentions.value or []
